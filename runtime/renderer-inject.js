@@ -645,10 +645,24 @@
     return shell;
   };
 
+  // Cached workspaces remain in the DOM after navigation. A hidden home must
+  // not determine the scope of the visible conversation.
+  const nodeIsRendered = (node) => {
+    if (!node || node.isConnected === false) return false;
+    // The skin intentionally hides home-icon itself. Check workspace layout,
+    // not that icon's own paint visibility, to avoid a scope/style feedback loop.
+    if (typeof getComputedStyle === "function") {
+      for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+        const style = getComputedStyle(parent);
+        if (style.display === "none" || style.contentVisibility === "hidden") return false;
+      }
+    }
+    return true;
+  };
   const selectorHit = (key) => {
     const selector = selectorByKey.get(key)?.selector;
     if (!selector) return false;
-    try { return Boolean(document.querySelector(selector)); } catch { return false; }
+    try { return [...document.querySelectorAll(selector)].some(nodeIsRendered); } catch { return false; }
   };
 
   const stableTestidHit = (testid) => {

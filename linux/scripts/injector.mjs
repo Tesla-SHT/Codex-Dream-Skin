@@ -1157,14 +1157,18 @@ export async function verifySession(session, expectedThemeId = null, expectedRev
         visible: Boolean(node.isConnected !== false && cssVisible && intersectsViewport),
       };
     };
-    const homeIndicator = document.querySelector(${selectorLiteral("home-icon")});
-    const homeSignal = homeIndicator ?? document.querySelector(${selectorLiteral("game-source")}) ??
-      document.querySelector(${selectorLiteral("home-suggestions")});
+    // Multiple cached workspaces coexist. Inspect the visible route instead
+    // of the first (often hidden) home shell/composer in document order.
+    const visibleNode = (selector) => [...document.querySelectorAll(selector)]
+      .find((node) => box(node)?.visible) ?? null;
+    const homeIndicator = visibleNode(${selectorLiteral("home-icon")});
+    const homeSignal = homeIndicator ?? visibleNode(${selectorLiteral("game-source")}) ??
+      visibleNode(${selectorLiteral("home-suggestions")});
     const homeRoute = homeSignal?.closest('[role="main"]') ?? null;
     // Codex 26.721.x can render the home content before home-icon. Reuse the
     // already-resolved semantic home container so a healthy home session is
     // not rejected solely because the stricter home-icon selector is late.
-    const home = document.querySelector(${selectorLiteral("home-route")}) ?? homeRoute;
+    const home = visibleNode(${selectorLiteral("home-route")}) ?? homeRoute;
     const suggestions = home?.querySelector(${selectorLiteral("home-suggestions")}) ?? null;
     const cardButtons = suggestions ? [...suggestions.querySelectorAll('button')] : [];
     const cardBoxes = cardButtons.map(box);
@@ -1203,11 +1207,11 @@ export async function verifySession(session, expectedThemeId = null, expectedRev
       ?? siblingCandidates.find((item) => item?.visible)
       ?? box(boxableChain[boxableChain.length - 1]);
     const projectButton = box(home?.querySelector(${selectorLiteral("project-selector")} + " > button"));
-    const shell = box(document.querySelector(${selectorLiteral("shell-main")}));
-    const composer = box(document.querySelector(${selectorLiteral("composer-chrome")}));
-    const sidebar = box(document.querySelector(${selectorLiteral("left-panel")}));
-    const genericMain = box(document.querySelector('[data-ds-part="main"], [data-ds-part="home"]'));
-    const genericInput = box(document.querySelector('[data-ds-part="composer"]'));
+    const shell = box(visibleNode(${selectorLiteral("shell-main")}));
+    const composer = box(visibleNode(${selectorLiteral("composer-chrome")}));
+    const sidebar = box(visibleNode(${selectorLiteral("left-panel")}));
+    const genericMain = box(visibleNode('[data-ds-part="main"], [data-ds-part="home"]'));
+    const genericInput = box(visibleNode('[data-ds-part="composer"]'));
     const settingsBoxes = [
       box(document.querySelector(${selectorLiteral("settings-panel")})),
       box(document.querySelector(${selectorLiteral("appearance-radio")})),

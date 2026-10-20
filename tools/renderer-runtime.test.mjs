@@ -670,7 +670,9 @@ export async function runRendererRuntimeTest(assetRoot) {
   assert.match(css, /main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\]\):has\(\[role="main"\]\)/);
   assert.match(css, /main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\]\):not\(:has\(\[role="main"\]\)\)/);
   assert.match(css, /header:is\(\.app-header-tint, \[data-app-shell-header-edge-scroll\], \[class\*=\"_Header_\"\]\)/);
-  assert.match(css, /:is\(\.app-shell-main-content-top-fade, \[data-app-shell-main-content-top-fade\], \[class\*=\"_MainContentTopFade_\"\]\)/);
+  assert.match(css, /:is\(\.app-shell-main-content-top-fade, \[data-app-shell-main-content-top-fade\]:empty, \[class\*=\"_MainContentTopFade_\"\]\)/);
+  assert.doesNotMatch(css, /\[data-app-shell-main-content-top-fade\](?!:empty)/,
+    "The fade state attribute can belong to the entire conversation; never hide a nonempty owner.");
   assert.doesNotMatch(css, /:has\([^()]*:has\(/);
   assert.doesNotMatch(
     css,
@@ -771,6 +773,15 @@ export async function runRendererRuntimeTest(assetRoot) {
   const unscoped = unscopedCssRules(css).join("\n");
   assert.doesNotMatch(unscoped, /\[role="main"\]:has\(\[data-testid="home-icon"\]\)/);
   assert.doesNotMatch(unscoped, /\.group\\\/project-selector/);
+
+  const cachedHome = makeFixture({ nativeAppearance: "dark" });
+  cachedHome.context.getComputedStyle = (node) => ({
+    display: node === cachedHome.partFixtures.main ? "none" : "block",
+    contentVisibility: "visible",
+  });
+  vm.runInNewContext(cachedHome.payloadFor(), cachedHome.context);
+  assert.equal(cachedHome.window.__CODEX_DREAM_SKIN_STATE__.scope.baseState, "thread",
+    "A cached hidden home must not classify the visible conversation as home.");
 
   const home = makeFixture({ nativeAppearance: "dark" });
   vm.runInNewContext(home.payloadFor({ art: { safeArea: "left", taskMode: "banner" } }), home.context);
